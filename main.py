@@ -1,33 +1,28 @@
 from flask import Flask, request, jsonify
+from flask_basicauth import BasicAuth
 from textblob import TextBlob
 from deep_translator import GoogleTranslator
-import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-
-df = pd.read_csv('casas.csv')
+import pickle
 
 colunas = ['tamanho', 'ano', 'garagem']
-
-X = df.drop('preco', axis=1)
-y = df['preco']
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42)
-
-modelo = LinearRegression()
-modelo.fit(X_train, y_train)
+modelo = pickle.load(open('modelo.sav', 'rb'))
 
 
 app = Flask(__name__)
+
+app.config['BASIC_AUTH_USERNAME'] = 'Vitor'
+app.config['BASIC_AUTH_PASSWORD'] = 'mlops123'
+
+basic_auth = BasicAuth(app)
 
 @app.route('/')
 # Função para rota 'home'
 def home():
     return 'Minha primeira API!'
 
-
 @app.route('/sentimento/<frase>')
+@basic_auth.required
 def sentimento(frase):
     traducao = GoogleTranslator(source="pt", target="en").translate(frase)
     traducao_blob = TextBlob(traducao)
